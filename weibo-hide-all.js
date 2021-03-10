@@ -40,7 +40,8 @@ hidden.prototype.hideNextPage = function () {
 
         _this.statuses = {};
         statuses.forEach(function (status) {
-            if (status.visible.type == 0) {
+            //type = 7 是什么？
+            if (status.visible.type == 0 || status.visible.type == 7) {
                 _this.statuses[status.id] = status;
             }
         }, this);
@@ -110,7 +111,7 @@ hidden.prototype.start = function () {
 | |  | | ___ _| |__   ___   | |_| |_  __| | __| | ___ _ __  
 | |/\\| |/ _ \\ | '_ \\ / _ \\  |  _  | |/ _\` |/ _\` |/ _ \\ '_ \\ 
 \\  /\\  /  __/ | |_) | (_) | | | | | | (_| | (_| |  __/ | | |
- \\/  \\/ \\___|_|_.__/ \\___/  \\_| |_/_|\\__,_|\\__,_|\\___|_| |_|   v1.1
+ \\/  \\/ \\___|_|_.__/ \\___/  \\_| |_/_|\\__,_|\\__,_|\\___|_| |_|   v1.2
 `);
     console.log("开始执行");
 
