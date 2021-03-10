@@ -1,67 +1,82 @@
-// 1. 使用 chrome 打开 weibo.com （确保你登录了微博）
-// 2. 打开调试窗口，在 console 中贴下面的代码后回车
-// 3. 输入 start();
+function hidden() {
+    this.page = 0;
+    this.reset();
+}
 
-var page = 0;
-var mids = [];
-var midIndex = 0;
-var timer = null;
-var running = false;
-var http = new XMLHttpRequest();
+hidden.prototype.reset = function () {
+    this.running = false;
+    this.mids = [];
+    this.midIndex = 0;
+    if (this.timer) {
+        clearInterval(this.timer);
+    }
+};
 
-function hideNextPage() {
-    page++;
-    let url = 'https://weibo.com/ajax/statuses/mymblog?uid=' + $CONFIG['uid'] + '&page=' + page; //&feature=0
+hidden.prototype.hideNextPage = function () {
+    this.reset();
+    this.running = true;
+    this.page++;
+    const url = 'https://weibo.com/ajax/statuses/mymblog?uid=' + $CONFIG['uid'] + '&page=' + this.page; //&feature=0
+    let http = new XMLHttpRequest();
     http.open('GET', url, true);
     http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     http.send();
+
+    var _this = this;
     http.onreadystatechange = function () {
         if (http.readyState != 4 || http.status != 200) {
             return;
         }
 
-        var result = JSON.parse(http.responseText);
-        if (result === undefined || result.data === undefined || result.data.list === undefined ) {
+        let json = JSON.parse(http.responseText);
+        if (json === undefined || json.data === undefined || json.data.list === undefined) {
+            console.log("无法获取到微博列表");
+        }
+
+        let statuses = json.data.list;
+        if (statuses.length == 0) {
+            _this.stop("恭喜你！如有漏网，请再执行一遍");
             return;
         }
 
-        var list = result.data.list;
-        if (list.length == 0) {
-            stop('恭喜你，可以重新来过了。如果还有请再执行一遍');
-            return;
-        }
-
-        list.forEach(element => {
-            if (element.visible.type == 0) {
-                mids.push(element.idstr);
+        _this.statuses = {};
+        statuses.forEach(function (status) {
+            if (status.visible.type == 0) {
+                _this.statuses[status.id] = status;
             }
-        });
+        }, this);
 
-        timer = setInterval(() => {
-            hideNextWeibo();
+        _this.mids = Object.keys(_this.statuses);
+        _this.timer = setInterval(function () {
+            _this.hideNextWeibo();
         }, 1000);
 
-        console.log('本页有 ' + mids.length + ' 条公开微博');
+        if (_this.statuses.length == 0) {
+            console.log('本页已完成 %d 条，即将进入下一页 %d', statuses.length, this.page + 1);
+        } else {
+            console.log('即将隐藏 %d 条公开的微博', _this.statuses.length);
+        }
     }
-}
+};
 
-function hideNextWeibo() {
-    if (midIndex < mids.length) {
-        hideWeibo(mids[midIndex]);
-        midIndex++;
+hidden.prototype.hideNextWeibo = function () {
+    if (this.midIndex < this.mids.length) {
+        this.deleteWeibo(this.mids[this.midIndex]);
+        this.midIndex++;
         return;
     }
 
-    mids = [];
-    midIndex = 0;
-    clearInterval(timer);
+    clearInterval(this.timer);
 
-    setTimeout(() => {
-        hideNextPage();
+    var _this = this;
+    setTimeout(function () {
+        _this.hideNextPage();
     }, 1000);
-}
+};
 
-function hideWeibo(mid) {
+hidden.prototype.deleteWeibo = function (mid) {
+    const status = this.statuses[mid];
+    http = new XMLHttpRequest();
     http.open('POST', 'https://weibo.com/p/aj/v6/mblog/modifyvisible?ajwvr=6&domain=100505&__rnd=' + Date.now(), true);
     http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     http.send('visible=1&mid=' + mid + '&_t=0');
@@ -70,37 +85,41 @@ function hideWeibo(mid) {
             return;
         }
 
-        let json = {}
         try {
-            json = JSON.parse(http.responseText);
+            const json = JSON.parse(http.responseText);
+            if (json.code == 100000) {
+                console.log("隐藏 %s，发布于'%s'，内容：'%s'", mid, status.created_at, status.text);
+            }
         } catch (error) {
-            console.error('隐藏失败 - ' + mid);
-            console.error(error);
             return;
         }
-
-        if (json.code == 100000) {
-            console.log('隐藏成功 - ' + mid);
-        }
     }
-}
+};
 
-function stop(message) {
-    clearInterval(timer);
-    running = false;
+hidden.prototype.stop = function (message) {
     console.log(message);
-}
+    this.running = false;
+    clearInterval(this.timer);
+};
 
-function start() {
-    if (running) {
-        console.log('进行中...');
+hidden.prototype.start = function () {
+    if (this.running) {
+        console.log('正在进行中，请稍后或者刷新页面后再执行.');
         return;
     }
 
-    console.log('开始隐藏');
-    running = true;
-    mids = [];
-    midIndex = 0;
-    page = 0;
-    hideNextPage();
-}
+    console.log(`
+
+ _    _      _ _             _   _ _     _     _            
+| |  | |    (_) |           | | | (_)   | |   | |           
+| |  | | ___ _| |__   ___   | |_| |_  __| | __| | ___ _ __  
+| |/\\| |/ _ \\ | '_ \\ / _ \\  |  _  | |/ _\` |/ _\` |/ _ \\ '_ \\ 
+\\  /\\  /  __/ | |_) | (_) | | | | | | (_| | (_| |  __/ | | |
+ \\/  \\/ \\___|_|_.__/ \\___/  \\_| |_/_|\\__,_|\\__,_|\\___|_| |_|   v1.0
+`);
+    console.log("开始执行");
+    this.hideNextPage();
+};
+
+// const weiboHidden = new hidden();
+// weiboHidden.start();
