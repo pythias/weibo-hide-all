@@ -39,12 +39,14 @@ hidden.prototype.hideNextPage = function () {
         }
 
         _this.statuses = {};
-        statuses.forEach(function (status) {
-            //type = 7 是什么？
-            if (status.visible.type == 0 || status.visible.type == 7) {
+        statuses.forEach(status => {
+            let status_type = status.visible.type;
+            if (status_type == 0) {
                 _this.statuses[status.id] = status;
+            } else if (status_type == 7) {
+                console.log("此微博无法隐藏，请手动处理 https://weibo.com/%d/%s", status.user.id, status.mblogid);
             }
-        }, this);
+        });
 
         _this.mids = Object.keys(_this.statuses);
         _this.timer = setInterval(function () {
@@ -111,7 +113,7 @@ hidden.prototype.start = function () {
 | |  | | ___ _| |__   ___   | |_| |_  __| | __| | ___ _ __  
 | |/\\| |/ _ \\ | '_ \\ / _ \\  |  _  | |/ _\` |/ _\` |/ _ \\ '_ \\ 
 \\  /\\  /  __/ | |_) | (_) | | | | | | (_| | (_| |  __/ | | |
- \\/  \\/ \\___|_|_.__/ \\___/  \\_| |_/_|\\__,_|\\__,_|\\___|_| |_|   v1.2
+ \\/  \\/ \\___|_|_.__/ \\___/  \\_| |_/_|\\__,_|\\__,_|\\___|_| |_|   v1.3
 `);
     console.log("开始执行");
 
@@ -119,5 +121,5 @@ hidden.prototype.start = function () {
     this.hideNextPage();
 };
 
-// const weiboHidden = new hidden();
+// weiboHidden = new hidden();
 // weiboHidden.start();
