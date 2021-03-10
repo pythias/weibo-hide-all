@@ -54,7 +54,7 @@ hidden.prototype.hideNextPage = function () {
         if (_this.statuses.length > 0) {
             console.log('即将隐藏 %d 条公开的微博', _this.statuses.length);
         } else {
-            console.log('本页已完成 %d 条，即将进入下一页 %d', statuses.length, this.page + 1);
+            console.log('本页已完成 %d 条，即将进入下一页 %d', statuses.length, _this.page + 1);
         }
     }
 };
